@@ -4,27 +4,24 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
+import java.util.stream.StreamSupport;
 
 public class Shared {
     public static class CountReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
-        private IntWritable result = new IntWritable();
-
         @Override
         protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
-            int sum = 0;
-            for (IntWritable v : values) {
-                sum += v.get();
-            }
-
-            result.set(sum);
-            context.write(key, result);
+            context.write(key, new IntWritable(
+                    StreamSupport.stream(values.spliterator(), false)
+                            .mapToInt(IntWritable::get)
+                            .sum()
+            ));
         }
     }
 
     public static class ReverseMapper extends Mapper<Text, Text, IntWritable, Text> {
         @Override
         protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
-            context.write(new IntWritable(Integer.valueOf(value.toString())),key);
+            context.write(new IntWritable(Integer.valueOf(value.toString())), key);
         }
     }
 
