@@ -23,12 +23,7 @@ public class WordCount {
         }
     }
 
-    public static class ReverseMapper extends Mapper<Text, Text, IntWritable, Text> {
-        @Override
-        protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
-            context.write(new IntWritable(Integer.valueOf(value.toString())),key);
-        }
-    }
+
 
     public static class ReverseCombiner extends Reducer<IntWritable, Text, Text, IntWritable> {
         @Override
@@ -36,16 +31,6 @@ public class WordCount {
             System.out.println("Combiner");
             for (Text v : values) {
                 context.write(v, key);
-            }
-        }
-    }
-
-    public static class ReverseReducer extends Reducer<IntWritable, Text, IntWritable, Text> {
-        @Override
-        protected void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            System.out.println("Reducer");
-            for (Text v : values) {
-                context.write(key, v);
             }
         }
     }
@@ -98,9 +83,9 @@ public class WordCount {
         Job job1 = Utility.genJob(
                 "1",
                 WordCount.class,
-                ReverseMapper.class,
-                ReverseReducer.class,
-                ReverseReducer.class,
+                Sorter.ReverseMapper.class,
+                Sorter.ReverseReducer.class,
+                Sorter.ReverseReducer.class,
                 IntWritable.class,
                 Text.class,
                 "stats",
