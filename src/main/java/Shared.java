@@ -28,7 +28,6 @@ public class Shared {
     public static class ReverseReducer extends Reducer<IntWritable, Text, IntWritable, Text> {
         @Override
         protected void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            System.out.println("Reducer");
             for (Text v : values) {
                 context.write(key, v);
             }
