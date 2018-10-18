@@ -52,21 +52,7 @@ public class WordCount {
         }
     }
 
-    public static class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
-        private IntWritable result = new IntWritable();
 
-        @Override
-        protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
-            System.out.println("reducer");
-            int sum = 0;
-            for (IntWritable v : values) {
-                sum += v.get();
-            }
-
-            result.set(sum);
-            context.write(key, result);
-        }
-    }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
         Job job0 = Utility.genJob(
@@ -74,7 +60,7 @@ public class WordCount {
                 WordCount.class,
                 MyMapper.class,
                 MyCombiner.class,
-                MyReducer.class,
+                Shared.CountReducer.class,
                 Text.class,
                 IntWritable.class,
                 "input",
@@ -83,9 +69,9 @@ public class WordCount {
         Job job1 = Utility.genJob(
                 "1",
                 WordCount.class,
-                Sorter.ReverseMapper.class,
-                Sorter.ReverseReducer.class,
-                Sorter.ReverseReducer.class,
+                Shared.ReverseMapper.class,
+                Shared.ReverseReducer.class,
+                Shared.ReverseReducer.class,
                 IntWritable.class,
                 Text.class,
                 "stats",

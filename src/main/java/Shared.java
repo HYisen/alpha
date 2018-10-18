@@ -5,7 +5,22 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 
-public class Sorter {
+public class Shared {
+    public static class CountReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+        private IntWritable result = new IntWritable();
+
+        @Override
+        protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+            int sum = 0;
+            for (IntWritable v : values) {
+                sum += v.get();
+            }
+
+            result.set(sum);
+            context.write(key, result);
+        }
+    }
+
     public static class ReverseMapper extends Mapper<Text, Text, IntWritable, Text> {
         @Override
         protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
