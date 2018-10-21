@@ -20,7 +20,18 @@ public class Utility {
             String inputPath,
             String outputPath
     ) throws IOException {
-        Job rtn = Job.getInstance(new Configuration(), jobName);
+        Configuration conf = new Configuration();
+//        conf.set("fs.defaultFS","hdfs:///node0:9000");//prefer fs.defaultFS
+//        conf.set("mapreduce.framework.name","yarn");
+//        conf.set("yarn.resourcemanager.address","192.168.0.10");
+//        conf.set("fs.defaultFS", "hdfs://node0:9000");
+//        conf.set("hadoop.job.user", "alex");
+//        conf.set("mapreduce.framework.name", "yarn");
+//        conf.set("mapreduce.jobtracker.address", "node0:9001");
+//        conf.set("yarn.resourcemanager.hostname", "node0");
+//        conf.set("mapreduce.jobhistory.address", "node0:10020");
+
+        Job rtn = Job.getInstance(conf, jobName);
         rtn.setJarByClass(jar);
         rtn.setMapperClass(mapper);
         rtn.setCombinerClass(combiner);
@@ -30,5 +41,17 @@ public class Utility {
         FileInputFormat.addInputPath(rtn, new Path(inputPath));
         FileOutputFormat.setOutputPath(rtn, new Path(outputPath));
         return rtn;
+    }
+
+    public static void printConf() {
+        Configuration conf = new Configuration();
+        conf.forEach(v -> System.out.println(v.getKey() + " = " + v.getValue()));
+        System.out.println(conf.get("fs.defaultFS"));
+        System.out.println(conf.get("yarn.resourcemanager.address"));
+        System.out.println(conf.get("mapreduce.framework.name"));
+    }
+
+    public static void main(String[] args) {
+        printConf();
     }
 }
