@@ -6,6 +6,7 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 public class Analyse {
     public static class ExtractMapper extends Mapper<Object, Text, Text, IntWritable> {
@@ -22,7 +23,7 @@ public class Analyse {
         }
     }
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
+    public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
         Job job = Utility.genJob(
                 "count",
                 Analyse.class,
@@ -32,25 +33,52 @@ public class Analyse {
                 Text.class,
                 IntWritable.class,
                 "/home/alex/code/01",
-                "stats"
+                "temp/0"
         );
+        job.setOutputFormatClass(SequenceFileOutputFormat.class);
+        job.waitForCompletion(true);
+
+        job = Utility.genJob(
+                "reverse",
+                Analyse.class,
+                Shared.ReverseMapper.class,
+                null,
+                null,
+                IntWritable.class,
+                Text.class,
+                "temp/0",
+                "temp/1"
+        );
+        job.setInputFormatClass(SequenceFileInputFormat.class);
         job.setOutputFormatClass(SequenceFileOutputFormat.class);
         job.waitForCompletion(true);
 
         job = Utility.genJob(
                 "sort",
                 Analyse.class,
-                Shared.ReverseMapper.class,
+                null,
                 Shared.ReverseReducer.class,
                 Shared.ReverseReducer.class,
                 IntWritable.class,
                 Text.class,
-                "stats",
+                "temp/1",
                 "output"
         );
         job.setInputFormatClass(SequenceFileInputFormat.class);
-//        job.setInputFormatClass(KeyValueTextInputFormat.class);
-        job.setNumReduceTasks(1);
+
+        job.setNumReduceTasks(2);
+        job.setPartitionerClass(Utility.EqualOnePartitioner.class);
+
+        //According to the sample result, 55% of the keys are 1,
+        //which means a RuntimeError "Split points are out of order" would be thrown once NumReduce > 2.
+//        job.setNumReduceTasks(10);
+//        InputSampler.Sampler<IntWritable, Text> sampler = new InputSampler.RandomSampler<>(0.05, 10000);
+//        InputSampler.writePartitionFile(job,sampler);
+//        job.setPartitionerClass(TotalOrderPartitioner.class);
+//        URI uri = new URI(TotalOrderPartitioner.getPartitionFile(job.getConfiguration()));
+//        System.out.println(uri);
+//        job.addCacheFile(uri);
+
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
 }

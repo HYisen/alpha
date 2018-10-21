@@ -1,7 +1,11 @@
+import com.sun.istack.Nullable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -12,9 +16,9 @@ public class Utility {
     public static Job genJob(
             String jobName,
             Class<?> jar,
-            Class<? extends Mapper> mapper,
-            Class<? extends Reducer> combiner,
-            Class<? extends Reducer> reducer,
+            @Nullable Class<? extends Mapper> mapper,
+            @Nullable Class<? extends Reducer> combiner,
+            @Nullable Class<? extends Reducer> reducer,
             Class<?> key,
             Class<?> value,
             String inputPath,
@@ -33,15 +37,31 @@ public class Utility {
 
         Job rtn = Job.getInstance(conf, jobName);
         rtn.setJarByClass(jar);
-        rtn.setMapperClass(mapper);
-        rtn.setCombinerClass(combiner);
-        rtn.setReducerClass(reducer);
+        if (mapper != null) {
+            rtn.setMapperClass(mapper);
+        }
+        if (combiner != null) {
+            rtn.setCombinerClass(combiner);
+        }
+        if (reducer != null) {
+            rtn.setReducerClass(reducer);
+        }
         rtn.setOutputKeyClass(key);
         rtn.setOutputValueClass(value);
         FileInputFormat.addInputPath(rtn, new Path(inputPath));
         FileOutputFormat.setOutputPath(rtn, new Path(outputPath));
         return rtn;
     }
+
+    public static class EqualOnePartitioner extends Partitioner<IntWritable, Text> {
+        private static IntWritable one = new IntWritable(1);
+
+        @Override
+        public int getPartition(IntWritable intWritable, Text text, int i) {
+            return intWritable.equals(one) ? 0 : 1;
+        }
+    }
+
 
     public static void printConf() {
         Configuration conf = new Configuration();
