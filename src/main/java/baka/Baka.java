@@ -7,11 +7,14 @@ import java.nio.file.Paths;
 
 public class Baka {
     public static void main(String[] args) throws IOException {
-        Path path = Paths.get("/","home", "alex", "code", "01", "data");
+        Path path = Paths.get("/","home", "alex", "code", "00", "data");
 
-        Files
+        long count = Files
                 .lines(path)
                 .map(Item::new)
-                .forEach(System.out::println);
+                .map(Item::getKey)
+                .filter("人体艺术"::equals)
+                .count();
+        System.out.println(count);
     }
 }
