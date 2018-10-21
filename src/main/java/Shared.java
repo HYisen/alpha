@@ -18,10 +18,10 @@ public class Shared {
         }
     }
 
-    public static class ReverseMapper extends Mapper<Text, Text, IntWritable, Text> {
+    public static class ReverseMapper extends Mapper<Text, IntWritable, IntWritable, Text> {
         @Override
-        protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
-            context.write(new IntWritable(Integer.valueOf(value.toString())), key);
+        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException {
+            context.write(value, key);
         }
     }
 

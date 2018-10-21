@@ -3,7 +3,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -66,6 +67,7 @@ public class WordCount {
                 "input",
                 "stats"
         );
+        job0.setOutputFormatClass(SequenceFileOutputFormat.class);
         Job job1 = Utility.genJob(
                 "1",
                 WordCount.class,
@@ -77,8 +79,8 @@ public class WordCount {
                 "stats",
                 "output"
         );
-        job1.setInputFormatClass(KeyValueTextInputFormat.class);
-
+//        job1.setInputFormatClass(KeyValueTextInputFormat.class);
+        job1.setInputFormatClass(SequenceFileInputFormat.class);
         job0.waitForCompletion(true);
         System.exit(job1.waitForCompletion(true) ? 0 : 1);
     }
