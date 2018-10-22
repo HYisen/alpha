@@ -4,11 +4,14 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.partition.InputSampler;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 
 public class Analyse {
+
     public static class ExtractMapper extends Mapper<Object, Text, Text, IntWritable> {
         private final static IntWritable one = new IntWritable(1);
         private Text word = new Text();
@@ -66,18 +69,19 @@ public class Analyse {
         );
         job.setInputFormatClass(SequenceFileInputFormat.class);
 
-        job.setNumReduceTasks(2);
-        job.setPartitionerClass(Utility.EqualOnePartitioner.class);
+//        job.setNumReduceTasks(2);
+//        job.setPartitionerClass(Utility.EqualOnePartitioner.class);
 
         //According to the sample result, 55% of the keys are 1,
-        //which means a RuntimeError "Split points are out of order" would be thrown once NumReduce > 2.
-//        job.setNumReduceTasks(10);
-//        InputSampler.Sampler<IntWritable, Text> sampler = new InputSampler.RandomSampler<>(0.05, 10000);
-//        InputSampler.writePartitionFile(job,sampler);
-//        job.setPartitionerClass(TotalOrderPartitioner.class);
-//        URI uri = new URI(TotalOrderPartitioner.getPartitionFile(job.getConfiguration()));
-//        System.out.println(uri);
-//        job.addCacheFile(uri);
+        //which means a RuntimeError "Split points are out of order"
+        //would be thrown once NumReduce > 2 with TotalOrderPartitioner.
+        job.setNumReduceTasks(20);
+        InputSampler.Sampler<IntWritable, Text> sampler = new InputSampler.RandomSampler<>(0.05, 10000);
+        InputSampler.writePartitionFile(job,sampler);
+        job.setPartitionerClass(Shared.MyTotalOrderPartitioner.class);
+        URI uri = new URI(Shared.MyTotalOrderPartitioner.getPartitionFile(job.getConfiguration()));
+        System.out.println(uri);
+        job.addCacheFile(uri);
 
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
