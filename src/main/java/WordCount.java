@@ -18,7 +18,8 @@ public class WordCount {
         protected void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             StringTokenizer st = new StringTokenizer(value.toString());
             while (st.hasMoreTokens()) {
-                word.set(st.nextToken());
+                String raw = st.nextToken();
+                word.set(raw.replaceAll("[.\"?,!]",""));
                 context.write(word, one);
             }
         }
@@ -65,7 +66,7 @@ public class WordCount {
                 Text.class,
                 IntWritable.class,
                 "input",
-                "stats"
+                "temp"
         );
         job0.setOutputFormatClass(SequenceFileOutputFormat.class);
         Job job1 = Utility.genJob(
@@ -76,7 +77,7 @@ public class WordCount {
                 Shared.ReverseReducer.class,
                 IntWritable.class,
                 Text.class,
-                "stats",
+                "temp",
                 "output"
         );
 //        job1.setInputFormatClass(KeyValueTextInputFormat.class);
