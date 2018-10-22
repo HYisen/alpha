@@ -13,7 +13,10 @@ import org.apache.hadoop.util.ReflectionUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.TreeMap;
 import java.util.stream.StreamSupport;
 
 public class Shared {
@@ -77,7 +80,6 @@ public class Shared {
 
         private TreeMap<K, Position> info;
         private K[] splitPoints;
-        private Random rand = new Random(17);
         private RawComparator<K> comparator;
 
         Configuration conf;
@@ -140,7 +142,7 @@ public class Shared {
             }
             Position pos = info.get(splitPoints[i]);
 
-            return pos.getLength() == 1 ? pos.getOffset() : pos.getOffset() + rand.nextInt(pos.getLength());
+            return pos.getLength() == 1 ? pos.getOffset() : pos.getOffset() + Math.abs(value.hashCode()) % pos.getLength();
         }
 
         public static void setPartitionFile(Configuration conf, Path p) {
