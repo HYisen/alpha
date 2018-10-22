@@ -4,6 +4,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.map.InverseMapper;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 import java.io.IOException;
@@ -72,9 +73,9 @@ public class WordCount {
         Job job1 = Utility.genJob(
                 "1",
                 WordCount.class,
-                Shared.ReverseMapper.class,
-                Shared.ReverseReducer.class,
-                Shared.ReverseReducer.class,
+                InverseMapper.class,
+                null,
+                null,
                 IntWritable.class,
                 Text.class,
                 "temp",
@@ -82,6 +83,8 @@ public class WordCount {
         );
 //        job1.setInputFormatClass(KeyValueTextInputFormat.class);
         job1.setInputFormatClass(SequenceFileInputFormat.class);
+        job1.setNumReduceTasks(2);
+        job1.setPartitionerClass(Utility.EqualOnePartitioner.class);
         job0.waitForCompletion(true);
         System.exit(job1.waitForCompletion(true) ? 0 : 1);
     }

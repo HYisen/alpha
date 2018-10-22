@@ -3,6 +3,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.map.InverseMapper;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.partition.InputSampler;
 
@@ -44,7 +45,7 @@ public class Analyse {
         job = Utility.genJob(
                 "reverse",
                 Analyse.class,
-                Shared.ReverseMapper.class,
+                InverseMapper.class,
                 null,
                 null,
                 IntWritable.class,
@@ -60,8 +61,8 @@ public class Analyse {
                 "sort",
                 Analyse.class,
                 null,
-                Shared.ReverseReducer.class,
-                Shared.ReverseReducer.class,
+                null,
+                null,
                 IntWritable.class,
                 Text.class,
                 "temp/1",

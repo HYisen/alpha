@@ -31,22 +31,6 @@ public class Shared {
         }
     }
 
-    public static class ReverseMapper extends Mapper<Text, IntWritable, IntWritable, Text> {
-        @Override
-        protected void map(Text key, IntWritable value, Context context) throws IOException, InterruptedException {
-            context.write(value, key);
-        }
-    }
-
-    public static class ReverseReducer extends Reducer<IntWritable, Text, IntWritable, Text> {
-        @Override
-        protected void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            for (Text v : values) {
-                context.write(key, v);
-            }
-        }
-    }
-
     public static class MyTotalOrderPartitioner<K extends WritableComparable<?>, V> extends Partitioner<K, V> implements Configurable {
         class Position {
             private int offset;
