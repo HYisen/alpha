@@ -26,19 +26,6 @@ public class WordCount {
         }
     }
 
-
-
-    public static class ReverseCombiner extends Reducer<IntWritable, Text, Text, IntWritable> {
-        @Override
-        protected void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            System.out.println("Combiner");
-            for (Text v : values) {
-                context.write(v, key);
-            }
-        }
-    }
-
-
     public static class MyCombiner extends Reducer<Text, IntWritable, Text, IntWritable> {
         private IntWritable result = new IntWritable();
 
