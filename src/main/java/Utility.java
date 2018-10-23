@@ -24,6 +24,8 @@ public class Utility {
             String inputPath,
             String outputPath
     ) throws IOException {
+        System.setProperty("hadoop.home.dir", "/");//A dummy for local test
+
         Configuration conf = new Configuration();
 //        conf.set("fs.defaultFS","hdfs:///node0:9000");//prefer fs.defaultFS
 //        conf.set("mapreduce.framework.name","yarn");
