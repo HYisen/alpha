@@ -27,17 +27,12 @@ public class Utility {
         System.setProperty("hadoop.home.dir", "/");//A dummy for local test
 
         Configuration conf = new Configuration();
-//        conf.set("fs.defaultFS","hdfs:///node0:9000");//prefer fs.defaultFS
+//        conf.set("fs.defaultFS","hdfs://node0:9000");
 //        conf.set("mapreduce.framework.name","yarn");
-//        conf.set("yarn.resourcemanager.address","192.168.0.10");
-//        conf.set("fs.defaultFS", "hdfs://node0:9000");
-//        conf.set("hadoop.job.user", "alex");
-//        conf.set("mapreduce.framework.name", "yarn");
-//        conf.set("mapreduce.jobtracker.address", "node0:9001");
-//        conf.set("yarn.resourcemanager.hostname", "node0");
-//        conf.set("mapreduce.jobhistory.address", "node0:10020");
+//        conf.set("yarn.resourcemanager.hostname","192.168.0.10");
 
         Job rtn = Job.getInstance(conf, jobName);
+//        rtn.setJar("target/original-alpha-1.0-SNAPSHOT.jar");
         rtn.setJarByClass(jar);
         if (mapper != null) {
             rtn.setMapperClass(mapper);
