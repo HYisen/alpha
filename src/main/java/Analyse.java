@@ -97,7 +97,7 @@ public class Analyse {
 
     public static void go(String name, Function<String, String> extractor)
             throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
-        go(name, extractor, "/home/alex/code/01", "output/" + name);
+        go(name, extractor, "/home/alex/code/00", "output/" + name);
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
