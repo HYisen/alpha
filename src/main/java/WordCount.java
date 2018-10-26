@@ -9,6 +9,7 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.map.InverseMapper;
 import org.apache.hadoop.mapreduce.lib.map.TokenCounterMapper;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import utility.Stopwatch;
 
 import java.io.IOException;
 
@@ -21,6 +22,7 @@ public class WordCount {
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
+        Stopwatch stopwatch = new Stopwatch();
         Job job = Utility.genJob(
                 "1",
                 WordCount.class,
@@ -56,6 +58,7 @@ public class WordCount {
         job.setNumReduceTasks(2);
         job.setPartitionerClass(Utility.EqualOnePartitioner.class);
         job.waitForCompletion(true);
+        stopwatch.report("total");
     }
 
 }

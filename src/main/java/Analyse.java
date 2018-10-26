@@ -6,6 +6,7 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.map.InverseMapper;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.partition.InputSampler;
+import utility.Stopwatch;
 
 import java.io.IOException;
 import java.net.URI;
@@ -28,6 +29,7 @@ public class Analyse {
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
+        Stopwatch stopwatch = new Stopwatch();
         Job job = Utility.genJob(
                 "count",
                 Analyse.class,
@@ -36,7 +38,7 @@ public class Analyse {
                 Shared.CountReducer.class,
                 Text.class,
                 IntWritable.class,
-                "/home/alex/code/01",
+                "/home/alex/code/00",
                 "temp/0"
         );
         job.setOutputFormatClass(SequenceFileOutputFormat.class);
@@ -76,7 +78,7 @@ public class Analyse {
         //According to the sample result, 55% of the keys are 1,
         //which means a RuntimeError "Split points are out of order"
         //would be thrown once NumReduce > 2 with TotalOrderPartitioner.
-        job.setNumReduceTasks(20);
+        job.setNumReduceTasks(12);
         InputSampler.Sampler<IntWritable, Text> sampler = new InputSampler.RandomSampler<>(0.05, 10000);
         InputSampler.writePartitionFile(job,sampler);
         job.setPartitionerClass(Shared.MyTotalOrderPartitioner.class);
@@ -84,6 +86,7 @@ public class Analyse {
         System.out.println(uri);
         job.addCacheFile(uri);
 
-        System.exit(job.waitForCompletion(true) ? 0 : 1);
+        job.waitForCompletion(true);
+        stopwatch.report("total");
     }
 }
