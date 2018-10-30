@@ -4,16 +4,14 @@ import utility.Stopwatch;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Baka {
     public static void main(String[] args) throws IOException {
         Stopwatch stopwatch = new Stopwatch();
-        Path path = Paths.get("/", "home", "alex", "code", "00", "data");
+//        Path path = Paths.get("/", "home", "alex", "code", "00", "data");
 
 //        long count = Files
 //                .lines(path)
@@ -40,14 +38,25 @@ public class Baka {
 //        stopwatch.report("save");
 
         //a much more elegance way to achieve the target.
-        ConcurrentMap<String, List<Item>> data = Files.lines(path)
-                .parallel()
-                .map(Item::new)
-                .collect(Collectors.groupingByConcurrent(Item::getKey));
-        stopwatch.report("load");
-        List<String> lines = data.entrySet().stream()
-                .map(v -> v.getKey() + "\t" + v.getValue().size()).collect(Collectors.toList());
-        Files.write(Paths.get("output", "result"), lines);
-        stopwatch.report("save");
+//        ConcurrentMap<String, List<Item>> data = Files.lines(path)
+//                .parallel()
+//                .map(Item::new)
+//                .collect(Collectors.groupingByConcurrent(Item::getKey));
+//        stopwatch.report("load");
+//        List<String> lines = data.entrySet().stream()
+//                .map(v -> v.getKey() + "\t" + v.getValue().size()).collect(Collectors.toList());
+//        Files.write(Paths.get("output", "result"), lines);
+//        stopwatch.report("save");
+
+        Files.write(Paths.get("output", "result"),
+                Files.lines(Paths.get("/", "home", "alex", "code", "00", "data"))
+                        .parallel()
+                        .map(v -> v.split("\t")[2])
+                        .collect(Collectors.groupingByConcurrent(Function.identity()))
+                        .entrySet().stream()
+                        .parallel()
+                        .map(v -> v.getKey() + "\t" + v.getValue().size()).collect(Collectors.toList()));
+
+        stopwatch.report("completed");
     }
 }
