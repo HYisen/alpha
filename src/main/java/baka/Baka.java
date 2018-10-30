@@ -6,11 +6,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public class Baka {
@@ -26,20 +23,31 @@ public class Baka {
 //                .count();
 //        System.out.println(count);
 
-        Map<String, Long> data = new ConcurrentHashMap<>();
-        Files.lines(path)
+//        Map<String, Long> data = new ConcurrentHashMap<>();
+//        Files.lines(path)
+//                .parallel()
+//                .map(Item::new)
+//                .map(Item::getKey)
+//                .forEach(v -> data.put(v, data.getOrDefault(v, 0L) + 1));
+//        stopwatch.report("load");
+//        List<String> lines = data.entrySet().stream()
+//                .parallel()
+//                .sorted(Comparator.comparing(Map.Entry::getValue))
+//                .map(v -> v.getValue() + "\t" + v.getKey())
+//                .collect(Collectors.toList());
+//        stopwatch.report("sort");
+//        Files.write(Paths.get("output","result"), lines);
+//        stopwatch.report("save");
+
+        //a much more elegance way to achieve the target.
+        ConcurrentMap<String, List<Item>> data = Files.lines(path)
                 .parallel()
                 .map(Item::new)
-                .map(Item::getKey)
-                .forEach(v -> data.put(v, data.getOrDefault(v, 0L) + 1));
+                .collect(Collectors.groupingByConcurrent(Item::getKey));
         stopwatch.report("load");
         List<String> lines = data.entrySet().stream()
-                .parallel()
-                .sorted(Comparator.comparing(Map.Entry::getValue))
-                .map(v -> v.getValue() + "\t" + v.getKey())
-                .collect(Collectors.toList());
-        stopwatch.report("sort");
-        Files.write(Paths.get("output","result"), lines);
+                .map(v -> v.getKey() + "\t" + v.getValue().size()).collect(Collectors.toList());
+        Files.write(Paths.get("output", "result"), lines);
         stopwatch.report("save");
     }
 }
