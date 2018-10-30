@@ -35,48 +35,42 @@ public class Analyse {
             throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
         Stopwatch stopwatch = new Stopwatch();
         ExtractMapper.extractor = extractor;
-        Job job = Utility.genJob(
-                name+"_count",
-                Analyse.class,
-                Analyse.ExtractMapper.class,
-                Shared.CountReducer.class,
-                Shared.CountReducer.class,
-                Text.class,
-                IntWritable.class,
-                inputPath,
-                "temp/"+name+"/0"
-        );
-        job.setOutputFormatClass(SequenceFileOutputFormat.class);
+        JobManager manager = new JobManager(name, Analyse.class, false);
+        Job job;
+        job = manager
+                .newJob("count")
+                .mapperClass(Analyse.ExtractMapper.class)
+                .combinerClass(Shared.CountReducer.class)
+                .reducerClass(Shared.CountReducer.class)
+                .outputKeyClass(Text.class)
+                .outputValueClass(IntWritable.class)
+                .inputPath(inputPath)
+                .outputPath("temp/" + name + "/0")
+                .outputFormat(SequenceFileOutputFormat.class)
+                .getJob();
         job.waitForCompletion(true);
 
-        job = Utility.genJob(
-                name+"_reverse",
-                Analyse.class,
-                InverseMapper.class,
-                null,
-                null,
-                IntWritable.class,
-                Text.class,
-                "temp/"+name+"/0",
-                "temp/"+name+"/1"
-        );
-        job.setInputFormatClass(SequenceFileInputFormat.class);
-        job.setOutputFormatClass(SequenceFileOutputFormat.class);
+        job = manager
+                .newJob("reverse")
+                .mapperClass(InverseMapper.class)
+                .outputKeyClass(IntWritable.class)
+                .outputValueClass(Text.class)
+                .inputPath("temp/" + name + "/0")
+                .outputPath("temp/" + name + "/1")
+                .inputFormat(SequenceFileInputFormat.class)
+                .outputFormat(SequenceFileOutputFormat.class)
+                .getJob();
         job.waitForCompletion(true);
 
-        job = Utility.genJob(
-                name+"_sort",
-                Analyse.class,
-                null,
-                null,
-                null,
-                IntWritable.class,
-                Text.class,
-                "temp/"+name+"/1",
-                outputPath
-        );
-        job.setInputFormatClass(SequenceFileInputFormat.class);
-
+        job = manager
+                .newJob("sort")
+                .outputKeyClass(IntWritable.class)
+                .outputValueClass(Text.class)
+                .inputPath("temp/" + name + "/1")
+                .outputPath("temp/" + name + "/2")
+                .inputFormat(SequenceFileInputFormat.class)
+//                .outputFormat(SequenceFileOutputFormat.class)
+                .getJob();
 //        job.setNumReduceTasks(2);
 //        job.setPartitionerClass(Utility.EqualOnePartitioner.class);
 
