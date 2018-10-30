@@ -52,10 +52,10 @@ public class Baka {
                 Files.lines(Paths.get("/", "home", "alex", "code", "00", "data"))
                         .parallel()
                         .map(v -> v.split("\t")[2])
-                        .collect(Collectors.groupingByConcurrent(Function.identity()))
+                        .collect(Collectors.groupingByConcurrent(Function.identity(), Collectors.counting()))
                         .entrySet().stream()
                         .parallel()
-                        .map(v -> v.getKey() + "\t" + v.getValue().size()).collect(Collectors.toList()));
+                        .map(v -> v.getKey() + "\t" + v.getValue()).collect(Collectors.toList()));
 
         stopwatch.report("completed");
     }
