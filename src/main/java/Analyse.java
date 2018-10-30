@@ -3,7 +3,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.chain.ChainReducer;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.map.InverseMapper;
@@ -13,7 +12,6 @@ import utility.Stopwatch;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.function.Function;
-import java.util.stream.StreamSupport;
 
 public class Analyse {
     public static class ExtractMapper extends Mapper<Object, Text, Text, IntWritable> {
@@ -60,9 +58,29 @@ public class Analyse {
         }
     }
 
+    public static class OccupancyReducer extends Reducer<IntWritable, Text, Text, Text> {
+        private int total = 0;
+
+        private Text stats = new Text();
+
+        @Override
+        protected void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+            if (total == 0) {
+                //should be the first line that contains sum information
+                total = key.get();
+                return;
+            }
+            //I don't use stream for the same reason in LimitReducer.
+            for (Text v : values) {
+                stats.set(String.format("%f\t%d", (float) (key.get()) / total, key.get()));
+                context.write(stats, v);
+            }
+        }
+    }
 
     //WARNING, do not use identical name for different tasks.
-    public static void go(String name, Function<String, String> extractor, String inputPath, String outputPath)
+    public static void go(String name, Function<String, String> extractor, String inputPath, String outputPath,
+                          int limit, boolean calcOccupancy)
             throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
         Stopwatch stopwatch = new Stopwatch();
         ExtractMapper.extractor = extractor;
@@ -121,32 +139,49 @@ public class Analyse {
 
         job.waitForCompletion(true);
 
+        LimitReducer.limit = limit + 1;
         job = manager
                 .newJob("join")
                 .mapperClass(Shared.RecoverCountMapper.class)
                 .combinerClass(LimitReducer.class)
+                .reducerClass(LimitReducer.class)
                 .sortComparatorClass(Shared.ReverseIntWritableComparator.class)
                 .outputKeyClass(IntWritable.class)
                 .outputValueClass(Text.class)
                 .inputPath("temp/" + name + "/2")
-                .outputPath(outputPath)
-//                .inputFormat(SequenceFileInputFormat.class)
+                .outputPath(calcOccupancy ? "temp/" + name + "/3" : outputPath)
+//                .inputFormat(SequenceFileInputFormat.class
                 .inputFormat(KeyValueTextInputFormat.class)
+//                .outputFormat(calcOccupancy ? SequenceFileOutputFormat.class : TextOutputFormat.class)
                 .getJob();
-        LimitReducer.limit = 11;
-        ChainReducer.setReducer(job, LimitReducer.class, IntWritable.class, Text.class,
-                IntWritable.class, Text.class, job.getConfiguration());
         job.waitForCompletion(true);
+
+        if (calcOccupancy) {
+            job = manager
+                    .newJob("stat")
+                    .mapperClass(Shared.RecoverCountMapper.class)
+                    .reducerClass(OccupancyReducer.class)
+                    .sortComparatorClass(Shared.ReverseIntWritableComparator.class)
+                    .outputKeyClass(IntWritable.class)
+                    .outputValueClass(Text.class)
+                    .inputPath("temp/" + name + "/3")
+                    .outputPath(outputPath)
+//                .inputFormat(SequenceFileInputFormat.class)
+                    .inputFormat(KeyValueTextInputFormat.class)
+                    .getJob();
+            job.waitForCompletion(true);
+
+        }
 
         stopwatch.report(name);
     }
 
-    public static void go(String name, Function<String, String> extractor)
+    public static void go(String name, Function<String, String> extractor, int limit, boolean calcOccupancy)
             throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
-        go(name, extractor, "/home/alex/code/01", "output/" + name);
+        go(name, extractor, "/home/alex/code/01", "output/" + name, limit, calcOccupancy);
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
-        go("keyword", v -> v.split("\t")[2]);
+        go("keyword", v -> v.split("\t")[2], 10, true);
     }
 }
