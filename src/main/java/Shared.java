@@ -20,6 +20,27 @@ import java.util.TreeMap;
 import java.util.stream.StreamSupport;
 
 public class Shared {
+    public static class RecoverCountMapper extends Mapper<Text, Text, IntWritable, Text> {
+        IntWritable count = new IntWritable();
+
+        @Override
+        protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
+            count.set(Integer.valueOf(key.toString()));
+            context.write(count, value);
+        }
+    }
+
+    public static class ReverseIntWritableComparator extends WritableComparator {
+        public ReverseIntWritableComparator() {
+            super(IntWritable.class,true);
+        }
+
+        @Override
+        public int compare(WritableComparable a, WritableComparable b) {
+            return -super.compare(a, b);
+        }
+    }
+
     public static class CountReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
         @Override
         protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {

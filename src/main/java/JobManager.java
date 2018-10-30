@@ -1,5 +1,6 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -92,6 +93,16 @@ public class JobManager {
 
     public JobManager outputFormat(Class<? extends OutputFormat> orig) {
         job.setOutputFormatClass(orig);
+        return this;
+    }
+
+    public JobManager sortComparatorClass(Class<? extends RawComparator> orig) {
+        job.setSortComparatorClass(orig);
+        return this;
+    }
+
+    public JobManager groupingComparatorClass(Class<? extends RawComparator> orig) {
+        job.setGroupingComparatorClass(orig);
         return this;
     }
 
