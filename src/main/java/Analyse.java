@@ -3,15 +3,15 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.map.InverseMapper;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.partition.InputSampler;
 import utility.Stopwatch;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.function.Function;
 
 public class Analyse {
     public static class ExtractMapper extends Mapper<Object, Text, Text, IntWritable> {
@@ -20,11 +20,20 @@ public class Analyse {
         private final static Text sample = new Text("sample");
 
         //WARNING, any modification there in runtime is global.
-        public static Function<String, String> extractor = Function.identity();
 
         @Override
         protected void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-            word.set(extractor.apply(value.toString()));
+            String content;
+            try {
+                content = value.toString().split("\t")[2];//keyword
+//                content = value.toString().split("\t")[5].split("/")[2];//website
+//                content = value.toString().split("\t")[5].split("/")[2].split("\\.")[1];//domain
+            } catch (Exception e) {
+                System.out.println(String.format("fuck %s => %s", key, value));
+                e.printStackTrace();
+                return;
+            }
+            word.set(content);
             context.write(word, one);
             context.write(sample, one);
         }
@@ -79,11 +88,10 @@ public class Analyse {
     }
 
     //WARNING, do not use identical name for different tasks.
-    public static void go(String name, Function<String, String> extractor, String inputPath, String outputPath,
+    public static void go(String name, String inputPath, String outputPath,
                           int limit, boolean calcOccupancy)
             throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
         Stopwatch stopwatch = new Stopwatch();
-        ExtractMapper.extractor = extractor;
         JobManager manager = new JobManager(name, Analyse.class, false);
         Job job;
 
@@ -99,6 +107,7 @@ public class Analyse {
                 .outputFormat(SequenceFileOutputFormat.class)
                 .getJob();
         job.waitForCompletion(true);
+        stopwatch.report("counted");
 
         job = manager
                 .newJob("reverse")
@@ -111,20 +120,21 @@ public class Analyse {
                 .outputFormat(SequenceFileOutputFormat.class)
                 .getJob();
         job.waitForCompletion(true);
+        stopwatch.report("reversed");
 
         job = manager
                 .newJob("sort")
                 .outputKeyClass(IntWritable.class)
                 .outputValueClass(Text.class)
                 .inputPath("temp/" + name + "/1")
-                .outputPath("temp/" + name + "/2")
+                .outputPath(outputPath)
                 .inputFormat(SequenceFileInputFormat.class)
 //                .outputFormat(SequenceFileOutputFormat.class)
                 .getJob();
-        job.setNumReduceTasks(2);
-        job.setPartitionerClass(Utility.EqualOnePartitioner.class);
+//        job.setNumReduceTasks(2);
+//        job.setPartitionerClass(Utility.EqualOnePartitioner.class);
 
-        /*
+
         //According to the sample result, 55% of the keys are 1,
         //which means a RuntimeError "Split points are out of order"
         //would be thrown once NumReduce > 2 with TotalOrderPartitioner.
@@ -135,53 +145,55 @@ public class Analyse {
         URI uri = new URI(Shared.MyTotalOrderPartitioner.getPartitionFile(job.getConfiguration()));
 //        System.out.println(uri);
         job.addCacheFile(uri);
-        */
 
         job.waitForCompletion(true);
-
-        LimitReducer.limit = limit + 1;
-        job = manager
-                .newJob("join")
-                .mapperClass(Shared.RecoverCountMapper.class)
-                .combinerClass(LimitReducer.class)
-                .reducerClass(LimitReducer.class)
-                .sortComparatorClass(Shared.ReverseIntWritableComparator.class)
-                .outputKeyClass(IntWritable.class)
-                .outputValueClass(Text.class)
-                .inputPath("temp/" + name + "/2")
-                .outputPath(calcOccupancy ? "temp/" + name + "/3" : outputPath)
-//                .inputFormat(SequenceFileInputFormat.class
-                .inputFormat(KeyValueTextInputFormat.class)
-//                .outputFormat(calcOccupancy ? SequenceFileOutputFormat.class : TextOutputFormat.class)
-                .getJob();
-        job.waitForCompletion(true);
-
-        if (calcOccupancy) {
-            job = manager
-                    .newJob("stat")
-                    .mapperClass(Shared.RecoverCountMapper.class)
-                    .reducerClass(OccupancyReducer.class)
-                    .sortComparatorClass(Shared.ReverseIntWritableComparator.class)
-                    .outputKeyClass(IntWritable.class)
-                    .outputValueClass(Text.class)
-                    .inputPath("temp/" + name + "/3")
-                    .outputPath(outputPath)
-//                .inputFormat(SequenceFileInputFormat.class)
-                    .inputFormat(KeyValueTextInputFormat.class)
-                    .getJob();
-            job.waitForCompletion(true);
-
-        }
+        stopwatch.report("sorted");
+//
+//        LimitReducer.limit = limit + 1;
+//        job = manager
+//                .newJob("join")
+//                .mapperClass(Shared.RecoverCountMapper.class)
+//                .combinerClass(LimitReducer.class)
+//                .reducerClass(LimitReducer.class)
+//                .sortComparatorClass(Shared.ReverseIntWritableComparator.class)
+//                .outputKeyClass(IntWritable.class)
+//                .outputValueClass(Text.class)
+//                .inputPath("temp/" + name + "/2")
+//                .outputPath(calcOccupancy ? "temp/" + name + "/3" : outputPath)
+////                .inputFormat(SequenceFileInputFormat.class
+//                .inputFormat(KeyValueTextInputFormat.class)
+////                .outputFormat(calcOccupancy ? SequenceFileOutputFormat.class : TextOutputFormat.class)
+//                .getJob();
+//        job.waitForCompletion(true);
+//        stopwatch.report("joined");
+//
+//        if (calcOccupancy) {
+//            job = manager
+//                    .newJob("stat")
+//                    .mapperClass(Shared.RecoverCountMapper.class)
+//                    .reducerClass(OccupancyReducer.class)
+//                    .sortComparatorClass(Shared.ReverseIntWritableComparator.class)
+//                    .outputKeyClass(IntWritable.class)
+//                    .outputValueClass(Text.class)
+//                    .inputPath("temp/" + name + "/3")
+//                    .outputPath(outputPath)
+////                .inputFormat(SequenceFileInputFormat.class)
+//                    .inputFormat(KeyValueTextInputFormat.class)
+//                    .getJob();
+//            job.waitForCompletion(true);
+//        stopwatch.report("stated");
+//        }
 
         stopwatch.report(name);
     }
 
-    public static void go(String name, Function<String, String> extractor, int limit, boolean calcOccupancy)
+    public static void go(String name, int limit, boolean calcOccupancy)
             throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
-        go(name, extractor, "/home/alex/code/01", "output/" + name, limit, calcOccupancy);
+        go(name, "/home/alex/code/03", "output/" + name, limit, calcOccupancy);
+//        go(name, "hdfs://node0:9000/user/alex/data", "output/" + name, limit, calcOccupancy);
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
-        go("keyword", v -> v.split("\t")[2], 10, true);
+        go("keyword", 30, true);
     }
 }
