@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2018 HYisen <alexhyisen@gmail.com>
+ */
+
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -141,8 +145,8 @@ public class Analyse {
         job.setNumReduceTasks(10);
         InputSampler.Sampler<IntWritable, Text> sampler = new InputSampler.RandomSampler<>(0.05, 10000);
         InputSampler.writePartitionFile(job, sampler);
-        job.setPartitionerClass(Shared.MyTotalOrderPartitioner.class);
-        URI uri = new URI(Shared.MyTotalOrderPartitioner.getPartitionFile(job.getConfiguration()));
+        job.setPartitionerClass(Copied.MyTotalOrderPartitioner.class);
+        URI uri = new URI(Copied.MyTotalOrderPartitioner.getPartitionFile(job.getConfiguration()));
 //        System.out.println(uri);
         job.addCacheFile(uri);
 

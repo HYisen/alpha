@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2018 HYisen <alexhyisen@gmail.com>
+ */
+
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;

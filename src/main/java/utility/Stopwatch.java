@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2018 HYisen <alexhyisen@gmail.com>
+ */
+
 package utility;
 
 import java.time.Duration;

@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2018 HYisen <alexhyisen@gmail.com>
+ */
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.RawComparator;
